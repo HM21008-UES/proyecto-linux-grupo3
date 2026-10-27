@@ -1,0 +1,37 @@
+DESCRIPCIÓN DEL PROYECTO
+
+1. PREPARACIÓN DEL ENTORNO SERVIDOR
+
+1.1. Administración básica del sistema
+
+Se configuró el nombre del servidor como servidor-grupo3 y se actualizó el archivo /etc/hosts. También se crearon los usuarios adminsys, tecnico y visitante, junto con los grupos soporte y web.
+
+Se asignaron los permisos correspondientes: adminsys al grupo sudo, tecnico al grupo soporte y visitante al grupo web. La configuración se verificó mediante comandos de consulta del sistema.
+
+1.2. Estructura de directorios y permisos
+
+Se crearon los directorios /proyecto/datos, /proyecto/web, /proyecto/scripts y /proyecto/capturas para organizar los archivos del proyecto.
+
+Se asignó el grupo soporte al directorio datos y el grupo web al directorio web, manteniendo a root como propietario.
+
+Se configuraron los permisos 2775 en ambos directorios. Esto activa el permiso setgid, que permite que los archivos nuevos hereden el grupo del directorio correspondiente. Los permisos se verificaron mediante pruebas de creación de archivos temporales.
+
+2. AUTOMATIZACIÓN Y MONITOREO
+
+2.1. Script de reporte del sistema
+
+Se creó el script reporte_sistema.sh en /proyecto/scripts para mostrar la fecha y hora, el nombre del servidor, los usuarios conectados, el espacio libre en disco, la memoria RAM disponible y el estado de Docker.
+
+2.2. Tarea programada con cron
+
+Se configuró cron para ejecutar el reporte cada 30 minutos y guardar los resultados en /var/log/proyecto/reporte_sistema.log.
+
+2.3. Verificación
+
+Se comprobó que el servicio cron estuviera activo y se verificó una ejecución automática del script el 27 de octubre de 2026 a las 15:00:01. También se confirmó que el reporte quedó guardado en el archivo de registro.
+
+Docker está instalado correctamente y el servicio se encuentra activo. La ejecución del script de monitoreo confirmó que actualmente hay 0 contenedores Docker activos, lo cual es normal porque todavía no se han iniciado contenedores para las siguientes etapas del proyecto.
+
+CONCLUSIÓN
+
+Se configuró el servidor, se crearon los usuarios y grupos, se establecieron los permisos de los directorios y se desarrolló un script para consultar información del sistema. Además, se programó y comprobó la ejecución automática de los reportes mediante cron.

@@ -14,4 +14,11 @@ Git, y servidores web Nginx en contenedores.
 - `capturas/`: evidencias del proyecto
 
 ## Pasos realizados
-(Cada integrante agrega aquí los pasos de su sección.)
+
+### Secciones 3, 4 y 5 (Git, Docker y Nginx)
+1. Se clonó el repositorio en `/proyecto` y se agregaron `web/index.html` y `datos/`.
+2. Se instaló Docker, se habilitó el servicio y se agregaron `adminsys` y `tecnico` al grupo `docker`.
+3. Se verificó Docker con `docker run hello-world` y `docker ps -a`.
+4. Se ejecutó un contenedor Nginx en segundo plano:
+   `docker run -d --name nginx-basico -p 8080:80 -v /proyecto/web:/usr/share/nginx/html nginx`
+5. Se verificó en `http://localhost:8080` y con `docker logs nginx-basico`.

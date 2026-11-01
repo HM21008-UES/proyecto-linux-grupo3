@@ -32,6 +32,80 @@ Se comprobó que el servicio cron estuviera activo y se verificó una ejecución
 
 Docker está instalado correctamente y el servicio se encuentra activo. La ejecución del script de monitoreo confirmó que actualmente hay 0 contenedores Docker activos, lo cual es normal porque todavía no se han iniciado contenedores para las siguientes etapas del proyecto.
 
+3. CONTROL DE VERSIONES CON GIT Y GITHUB
+
+3.1. Estructura del repositorio
+
+Se clonó el repositorio proyecto-linux-grupo3 desde GitHub en el directorio /proyecto del servidor. Sobre esa base se crearon las carpetas web y datos, que faltaban para completar la estructura del proyecto. Como Git no almacena directorios vacíos, se agregó un archivo oculto .gitkeep dentro de datos para que la carpeta quedara incluida en el repositorio.
+
+También se creó el archivo index.html dentro de web, con el título del proyecto, la universidad, el ciclo y los nombres de los integrantes del grupo. Este archivo es el que más adelante sirve el contenedor Nginx.
+
+3.2. Documentación del repositorio
+
+Se redactó el archivo README.md con la descripción del proyecto, la estructura de carpetas y los pasos realizados en cada fase. Este documento se actualiza conforme los integrantes completan sus secciones.
+
+3.3. Registro de cambios y sincronización
+
+Se revisó el estado del repositorio, se agregaron los archivos nuevos y se registraron en un commit con un mensaje descriptivo. Después se sincronizó con el repositorio remoto y se subieron los cambios a GitHub. Se comprobó que el historial mostrara el commit nuevo sobre el de la documentación inicial, que el remoto apuntara a HM21008-UES/proyecto-linux-grupo3 y que los archivos aparecieran en la página del repositorio.
+
+4. INSTALACIÓN Y CONFIGURACIÓN DE DOCKER
+
+4.1. Instalación del servicio
+
+Se instaló Docker en el servidor y se habilitó el servicio para que inicie junto con el sistema. Se verificó la versión instalada y se comprobó que el servicio estuviera activo.
+
+4.2. Permisos de usuarios
+
+Se verificó que los usuarios adminsys y tecnico existieran en el sistema y, al no encontrarse, se crearon. Luego se agregaron ambos, junto con el usuario que administra el equipo, al grupo docker, para que puedan usar Docker sin privilegios de superusuario. La configuración se verificó consultando los miembros del grupo y ejecutando un comando de Docker como el usuario tecnico, que funcionó sin errores de permisos.
+
+4.3. Prueba de funcionamiento
+
+Para comprobar la instalación se ejecutó el contenedor de prueba hello-world, que descargó la imagen y mostró el mensaje de bienvenida de Docker. Después se listaron todos los contenedores, donde hello-world aparece con estado Exited (0), lo que indica que terminó correctamente.
+
+5. SERVIDOR WEB CON NGINX EN UN CONTENEDOR
+
+5.1. Creación del contenedor
+
+Se levantó un contenedor llamado nginx-basico a partir de la imagen oficial de Nginx, en segundo plano. El puerto 80 del contenedor se publicó en el puerto 8080 del servidor, y el directorio /proyecto/web se montó como volumen en la ruta donde Nginx busca el contenido del sitio. De esta forma, cualquier cambio en index.html se refleja de inmediato en la página. Se comprobó con la lista de contenedores que el servicio estuviera en estado Up.
+
+5.2. Verificación
+
+Se accedió a http://localhost:8080 desde el navegador y se mostró la página con el título del proyecto y los nombres de los integrantes. También se consultó con curl, que devolvió el contenido de index.html, y se revisaron los registros del contenedor, que muestran el arranque normal de Nginx sin errores y la petición GET con código de respuesta 200.
+
+6. DOCKER AVANZADO
+
+6.1. Dockerfile personalizado
+
+Se creó el archivo Dockerfile en /proyecto. Parte de la imagen nginx:latest, copia el contenido de la carpeta web al directorio de Nginx, expone el puerto 80 y define el comando de inicio de Nginx en primer plano. Con docker build se construyó la imagen servidor-grupo3, que aparece en la lista de imágenes junto a la imagen oficial.
+
+6.2. Contenedor con la imagen personalizada
+
+Se ejecutó el contenedor contenedor-grupo3 con la imagen servidor-grupo3, asignando el puerto 8081 del servidor al puerto 80 del contenedor, y se comprobó el sitio en http://localhost:8081. Para comparar, se ejecutó en paralelo el contenedor servidor-oficial con la imagen oficial de Nginx en el puerto 8080, que muestra la página de bienvenida predeterminada. La diferencia es que la imagen propia lleva el sitio del grupo copiado dentro de la imagen, mientras que la oficial no lo incluye.
+
+7. REDES Y VOLÚMENES DOCKER
+
+7.1. Red personalizada
+
+Se creó la red red-proyecto, de tipo bridge, y se ejecutó el contenedor nginx-red conectado a ella, con el puerto 8082 del servidor asignado al puerto 80 del contenedor. Con docker network inspect se verificó la subred 172.18.0.0/16 y que nginx-red quedó conectado con la dirección 172.18.0.2.
+
+7.2. Volumen persistente
+
+Se creó el volumen volumen-web y se ejecutó el contenedor nginx-volumen montándolo en el directorio web de Nginx, con el puerto 8083 asignado al puerto 80. Al inspeccionar el contenedor se comprobó el montaje de tipo volume, que apunta a /var/lib/docker/volumes/volumen-web/_data. Los datos del volumen se conservan aunque se elimine el contenedor.
+
+8. PRUEBAS Y VERIFICACIÓN FINAL
+
+8.1. Pruebas de conectividad
+
+Se ejecutó un contenedor temporal de Alpine Linux dentro de la red red-proyecto y se hizo ping al contenedor nginx-red usando su nombre. Docker resolvió el nombre a 172.18.0.2 y se recibieron los 4 paquetes, sin pérdidas.
+
+8.2. Verificación integral
+
+Se comprobó que los cuatro contenedores están en estado Up y que responden en los puertos 8080, 8081, 8082 y 8083. También se verificó que la tarea de cron del script de monitoreo está programada cada 30 minutos y que sus ejecuciones automáticas quedan registradas en el sistema, y que el repositorio Git está sincronizado con GitHub, sin cambios pendientes.
+
 CONCLUSIÓN
 
 Se configuró el servidor, se crearon los usuarios y grupos, se establecieron los permisos de los directorios y se desarrolló un script para consultar información del sistema. Además, se programó y comprobó la ejecución automática de los reportes mediante cron.
+
+Se subió el proyecto a GitHub con la estructura de carpetas y un README, se instaló Docker con los permisos de usuarios necesarios y se publicó un sitio web con Nginx en un contenedor.
+
+Se construyó una imagen propia con un Dockerfile y se desplegaron servidores Nginx con una red personalizada y un volumen persistente. Todos los servicios quedaron funcionando en los puertos 8080 a 8083 y su conectividad se verificó con ping.

@@ -2,36 +2,104 @@
 
 Introducción al Software Libre - Universidad de El Salvador, Ciclo II 2026.
 
+## Integrantes
+- Roberto Rafael Ramos Alfaro (RA23035)
+- Raquel Abigail Hernández Martínez (HM21008)
+- Marco Josué Orellana Cortez (OC23006)
+
 ## Descripción
-Servidor Linux automatizado con contenedores Docker: administración de
-usuarios y grupos, script de monitoreo con cron, control de versiones con
-Git, y servidores web Nginx en contenedores.
+Servidor Linux (`servidor-grupo3`) con usuarios y grupos, un script de monitoreo
+automatizado con cron, control de versiones con Git y GitHub, y servidores web
+Nginx que se ejecutan en contenedores Docker.
 
 ## Estructura
 - `datos/`: archivos de configuración
-- `web/`: archivos del sitio web
-- `scripts/`: scripts de automatización
+- `web/`: archivos del sitio web (`index.html`)
+- `scripts/`: scripts de automatización (`reporte_sistema.sh`)
 - `capturas/`: evidencias del proyecto
+- `Dockerfile`: imagen personalizada `servidor-grupo3`
+
+## Servicios finales
+| Contenedor | Imagen | Puerto | Descripción |
+|---|---|---|---|
+| servidor-oficial | nginx | 8080 | Nginx oficial |
+| contenedor-grupo3 | servidor-grupo3 | 8081 | Imagen propia con el sitio del grupo |
+| nginx-red | nginx:latest | 8082 | Conectado a la red `red-proyecto` |
+| nginx-volumen | nginx:latest | 8083 | Contenido en el volumen `volumen-web` |
 
 ## Pasos realizados
 
-### Secciones 3, 4 y 5 (Git, Docker y Nginx)
-1. Se clonó el repositorio en `/proyecto` y se agregaron `web/index.html` y `datos/`.
-2. Se instaló Docker, se habilitó el servicio y se agregaron `adminsys` y `tecnico` al grupo `docker`.
-3. Se verificó Docker con `docker run hello-world` y `docker ps -a`.
-4. Se ejecutó un contenedor Nginx en segundo plano:
-   `docker run -d --name nginx-basico -p 8080:80 -v /proyecto/web:/usr/share/nginx/html nginx`
-5. Se verificó en `http://localhost:8080` y con `docker logs nginx-basico`.
+### 1. Entorno del servidor
+```bash
+sudo hostnamectl set-hostname servidor-grupo3
+sudo adduser adminsys; sudo adduser tecnico; sudo adduser visitante
+sudo groupadd soporte; sudo groupadd web
+sudo usermod -aG sudo adminsys
+sudo usermod -aG soporte tecnico
+sudo usermod -aG web visitante
+sudo mkdir -p /proyecto/datos /proyecto/web /proyecto/scripts /proyecto/capturas
+sudo chown root:soporte /proyecto/datos
+sudo chown root:web /proyecto/web
+sudo chmod 2775 /proyecto/datos /proyecto/web
+```
+El permiso `2775` activa setgid: los archivos nuevos heredan el grupo del directorio.
 
-### Sección 6: Creación de Imagen Personalizada y Despliegue de Contenedor
-1. Creación del Dockerfile: Se redactó un archivo de configuración `Dockerfile` dentro del directorio `/proyecto`.
-2. Construcción de la imagen personalizada: Con el archivo de configuración listo, se ejecutó el proceso de compilación mediante `docker build` para generar una nueva imagen local denominada `servidor-grupo3`.
-3. Despliegue del contenedor personalizado: Se puso en marcha el contenedor `contenedor-grupo3` a partir de la imagen recién construida, vinculando el puerto 8081 del sistema anfitrión con el puerto 8080 del contenedor. 
-4. Validación y comparación de servicios: Se inició en paralelo el contenedor oficial de Nginx (`servidor-oficial`) en el puerto 8080. 
+### 2. Automatización
+```bash
+chmod +x /proyecto/scripts/reporte_sistema.sh
+sudo mkdir -p /var/log/proyecto
+crontab -e
+# */30 * * * * /proyecto/scripts/reporte_sistema.sh >> /var/log/proyecto/reporte_sistema.log 2>&1
+```
 
-### Secciones 7 y 8: Redes y Volúmenes en Docker; Pruebas y Verificación Final.
-1. Red Personalizada: Se creó la red personalizada red-proyecto mediante el driver bridge para aislar el tráfico de los contenedores. Se desplegó el servicio nginx-red conectado a esta red y mapeado al puerto 8082 del host. Mediante el comando docker network inspect se verificó la asignación correcta de la red y la dirección IP interna del contenedor .
-2. Volúmenes Persistentes: Se configuró la persistencia de datos mediante el volumen administrado volumen-web, montado en el directorio /usr/share/nginx/html del contenedor nginx-volumen expuesto en el puerto 8083. La vinculación del volumen se confirmó a través de la inspección del contenedor .
-3. Pruebas de Conectividad: Se ejecutó un contenedor auxiliar basado en la imagen alpine dentro de la red red-proyecto para evaluar la conectividad y resolución DNS interna. Se realizó una prueba ICMP (ping -c 4 nginx-red), comprobando una tasa de respuesta exitosa del 100%.
-4. Verificación Integral y Control de Versiones: Se validó el funcionamiento continuo de los servicios ejecutando docker ps y realizando peticiones HTTP a los puertos correspondientes. Finalmente, Verificar los scripts (cada 30 min) .
+### 3. Git y GitHub
+```bash
+git clone https://github.com/HM21008-UES/proyecto-linux-grupo3.git /proyecto
+git add . && git commit -m "mensaje" && git pull --rebase && git push
+```
 
+### 4. Docker
+```bash
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker adminsys
+sudo usermod -aG docker tecnico
+docker run hello-world
+docker ps -a
+```
+
+### 5. Nginx en contenedor
+```bash
+docker run -d --name nginx-basico -p 8080:80 -v /proyecto/web:/usr/share/nginx/html nginx
+curl http://localhost:8080
+docker logs nginx-basico
+```
+
+### 6. Dockerfile e imagen personalizada
+```bash
+cd /proyecto
+docker build -t servidor-grupo3 .
+docker run -d -p 8081:80 --name contenedor-grupo3 servidor-grupo3
+docker run -d -p 8080:80 --name servidor-oficial nginx   # comparación con el Nginx oficial
+```
+La imagen propia incluye el sitio copiado dentro; la oficial muestra la página predeterminada de Nginx.
+
+### 7. Redes y volúmenes
+```bash
+docker network create red-proyecto
+docker run -d --name nginx-red --network red-proyecto -p 8082:80 nginx:latest
+docker network inspect red-proyecto
+docker volume create volumen-web
+docker run -d --name nginx-volumen -v volumen-web:/usr/share/nginx/html -p 8083:80 nginx:latest
+docker inspect nginx-volumen | grep -A 10 "Mounts"
+```
+
+### 8. Pruebas y verificación final
+```bash
+docker run --rm --network red-proyecto alpine ping -c 4 nginx-red
+docker ps
+curl http://localhost:8082
+curl http://localhost:8083
+crontab -l
+git status
+```
